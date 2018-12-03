@@ -446,7 +446,7 @@ def getDroughtStatistics(filterLock, flag, code, woy, includes=[], excludes=[]):
 
 def getClosestDroughtWOY(woy):
     sql = "select distinct woy from history_drought \
-            where to_timestamp(concat(substring(woy,6,2),' ',substring(woy,1,4)), 'W YYYY')::date < to_timestamp(concat(substring('"+woy+"',6,2),' ',substring('"+woy+"',1,4)), 'W YYYY')::date \
+            where to_timestamp(concat(substring(woy,6,2),' ',substring(woy,1,4)), 'WW YYYY')::date < to_timestamp(concat(substring('"+woy+"',6,2),' ',substring('"+woy+"',1,4)), 'WW YYYY')::date \
             ORDER BY woy DESC \
             LIMIT 1"
     cursor = connections['geodb'].cursor()
