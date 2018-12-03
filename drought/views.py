@@ -78,12 +78,18 @@ import time, datetime
 import timeago
 import pandas as pd
 
-def get_dashboard_meta(page_name):
-    if page_name == 'drought':
-        return {'function':dashboard_drought, 'template':'dash_drought.html'}
-    return None
-
-# from geodb.geo_calc
+def get_dashboard_meta():
+	return {
+		'pages': [
+			{
+				'name': 'drought',
+				'function': dashboard_drought, 
+				'template': 'dash_drought.html',
+				'menutitle': 'Drought',
+			},
+		],
+		'menutitle': 'Drought',
+	}
 
 def getDroughtRisk(request, filterLock, flag, code, woy=None, includes=[], excludes=[], **kwargs):
     
