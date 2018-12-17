@@ -1,0 +1,6 @@
+include LICENSE
+include VERSION
+include README.rst
+recursive-include drought/locale *
+recursive-include drought/templates *
+recursive-include drought/migrations *
