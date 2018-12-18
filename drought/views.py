@@ -564,6 +564,7 @@ def dashboard_drought(request, filterLock, flag, code, date=None, includes=[], e
 		response.update(getCommonUse(request, flag, code))
 
 	response['source'] = source = dict_ext(getDroughtRisk(request, filterLock, flag, code, woy=woy))
+	response.update(source.within('woy','woy_datestart','woy_dateend'))
 	panels = response.path('panels')
 	donutcharts = panels.path('charts','donut')
 	barcharts = panels.path('charts','bar')
