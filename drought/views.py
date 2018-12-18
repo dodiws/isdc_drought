@@ -606,13 +606,13 @@ def dashboard_drought(request, filterLock, flag, code, date=None, includes=[], e
 		table['key'] = key
 		table['parentdata'] = [response['parent_label']] + [sub for kr,r in source['drought_data']['group_by']['risk'].items() for ksub,sub in r['child'].items()]
 		table['parentdata'] += [0]*(colcount-len(table['parentdata']))
-		table['values'] = []
+		table['child'] = []
 		for kadm, adm in lc['adm_child'].items():
 			row = [adm['label'],]
 			for kr, r in adm['risk_child'].items():
 				row += [r['child']['pop']] + [r['child']['building']] + [r['child']['area']]
 			row += [0]*(colcount-len(row))
-			table['values'].append({
+			table['child'].append({
 				'code':adm['code'],
 				'values':row,
 			})
