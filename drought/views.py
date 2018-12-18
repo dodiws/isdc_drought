@@ -586,12 +586,12 @@ def dashboard_drought(request, filterLock, flag, code, date=None, includes=[], e
 		barcharts.path(k)['key'] = k
 		barcharts.path(k)['labels'] = [lc for lc in lcrisk]
 		barcharts.path(k)['child'] = [{
-			'title':_(DROUGHTRISK_TYPES[r]),
-			'values':[lcrisk.pathget(lc,'risk_child',r,'child',k) or 0 for lc in barcharts.path(k)['labels']],
+			'name':_(DROUGHTRISK_TYPES[r]),
+			'data':[lcrisk.pathget(lc,'risk_child',r,'child',k) or 0 for lc in barcharts.path(k)['labels']],
 		} for r in DROUGHTRISK_TYPES_ORDER]
 		barcharts.path(k)['child'].append({
-			'title':_("Not at Risk"),
-			'values':[lcrisk[lc]['total_child'][k]-lcrisk[lc]['total_risk_child'][k] for lc in barcharts.path(k)['labels']],
+			'name':_("Not at Risk"),
+			'data':[lcrisk[lc]['total_child'][k]-lcrisk[lc]['total_risk_child'][k] for lc in barcharts.path(k)['labels']],
 		})
 	barcharts['pop']['title'] = _('Drought Population Landcover')
 	barcharts['area']['title'] = _('Drought Area Landcover')
