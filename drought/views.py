@@ -449,12 +449,12 @@ def getDroughtStatistics(request, filterLock, flag, code, woy, includes=[], excl
 
 def getDroughtStatisticsDashboard(request, filterLock, flag, code, date, includes=[], excludes=[]):
 
-	panels = dashboard_drought(request, filterLock, flag, code, date)['panels']
+	panels = dict_ext(dashboard_drought(request, filterLock, flag, code, date)).path('panels')
 
 	panels_list = dict_ext()
-	panels_list.path('charts')['donut'] = dict_ext(panels['charts']['donut']).valueslistbykey(['pop','building','area'],addkeyasattr=True)
-	panels_list.path('charts')['bar'] = dict_ext(panels['charts']['bar']).valueslistbykey(['pop','area'],addkeyasattr=True)
-	panels_list['tables'] = dict_ext(panels['tables']).valueslistbykey(['fruit_trees','rainfed','rangeland','forest_shrub','vineyards','build_up','irrigated_agricultural_land'],addkeyasattr=True)
+	panels_list.path('charts')['donut'] = panels.path('charts','donut').valueslistbykey(['pop','building','area'],addkeyasattr=True)
+	panels_list.path('charts')['bar'] = panels.path('charts','bar').valueslistbykey(['pop','area'],addkeyasattr=True)
+	panels_list['tables'] = panels.path('tables').valueslistbykey(['fruit_trees','rainfed','rangeland','forest_shrub','vineyards','build_up','irrigated_agricultural_land'],addkeyasattr=True)
 
 	return {'panels_list':panels_list}
 
@@ -555,16 +555,19 @@ def dashboard_drought(request, filterLock, flag, code, date=None, includes=[], e
 	date_parsed = datetime.datetime.strptime(date, "%Y-%m-%d")
 	woy = getClosestDroughtWOY('%s%03d' % (date_parsed.year,date_parsed.isocalendar()[1]))
 
+	if not woy:
+		return {'nodata':True, 'nodata_desc':'No Week of Year data found.'}
+
 	response = dict_ext()
 
 	if include_section('getCommonUse', includes, excludes):
 		response.update(getCommonUse(request, flag, code))
 
 	response['source'] = source = dict_ext(getDroughtRisk(request, filterLock, flag, code, woy=woy))
-	panels = response['panels'] = dict_ext()
-	donutcharts = panels.path('charts')['donut'] = dict_ext()
-	barcharts = panels.path('charts')['bar'] = dict_ext()
-	tables = panels['tables'] = dict_ext()
+	panels = response.path('panels')
+	donutcharts = panels.path('charts','donut')
+	barcharts = panels.path('charts','bar')
+	tables = panels.path('tables')
 
 	panels.path('charts')['donut'] = donutcharts = {k:{
 		'key':k,
