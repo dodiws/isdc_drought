@@ -454,7 +454,12 @@ def getDroughtStatisticsDashboard(request, filterLock, flag, code, date, include
 	panels_list = dict_ext()
 	panels_list.path('charts')['donut'] = panels.path('charts','donut').valueslistbykey(['pop','building','area'],addkeyasattr=True)
 	panels_list.path('charts')['bar'] = panels.path('charts','bar').valueslistbykey(['pop','area'],addkeyasattr=True)
-	panels_list['tables'] = panels.path('tables').valueslistbykey(['fruit_trees','rainfed','rangeland','forest_shrub','vineyards','build_up','irrigated_agricultural_land'],addkeyasattr=True)
+	# panels_list['tables'] = panels.path('tables').valueslistbykey(['fruit_trees','rainfed','rangeland','forest_shrub','vineyards','build_up','irrigated_agricultural_land'],addkeyasattr=True)
+	panels_list['tables'] = [{
+		'key':klc,
+		'title':DROUGHTLANDCOVER_TYPES[klc],
+		'child':[panels.path('tables',klc,'parentdata')]+([r['value'] for r in panels.path('tables',klc,'child')] or []),
+	} for klc in DROUGHTLANDCOVER_TYPES_ORDER]
 
 	return {'panels_list':panels_list}
 
@@ -599,22 +604,22 @@ def dashboard_drought(request, filterLock, flag, code, date=None, includes=[], e
 
 	colcount = 16
 	custom_slugify = Slugify(separator='_', to_lower=True)
-	for klc, lc in source['drought_data']['group_by']['landcover_area_risk']['lc_child'].items():
-		key = custom_slugify(klc)
+	for klc in DROUGHTLANDCOVER_TYPES_ORDER:
+		key = klc
 		table = tables.path(key)
-		table['title'] = _(klc)
+		table['title'] = lc = _(DROUGHTLANDCOVER_TYPES[klc])
 		table['key'] = key
 		table['parentdata'] = [response['parent_label']] + [sub for kr,r in source['drought_data']['group_by']['risk'].items() for ksub,sub in r['child'].items()]
 		table['parentdata'] += [0]*(colcount-len(table['parentdata']))
 		table['child'] = []
-		for kadm, adm in lc['adm_child'].items():
+		for kadm, adm in source.pathget('drought_data','group_by','landcover_area_risk','lc_child',lc,'adm_child').items():
 			row = [adm['label'],]
 			for kr, r in adm['risk_child'].items():
 				row += [r['child']['pop']] + [r['child']['building']] + [r['child']['area']]
 			row += [0]*(colcount-len(row))
 			table['child'].append({
 				'code':adm['code'],
-				'values':row,
+				'value':row,
 			})
 
 	if include_section('GeoJson', includes, excludes):
