@@ -14,9 +14,9 @@
     </div>
 
     {% if nodata %}
-    <div class="row">
-        {{ nodata_desc }}
-    </div>    
+        <div class="row">
+            {{ nodata_desc }}
+        </div>    
     {% else %}
     <div class="row">
         <div class="col s12">
@@ -30,7 +30,7 @@
                                 </span>
                             </div>
                             <div class="input-field col s12 xl2">
-                                <input type="text" id="set_woy" class="datepicker" data-date-format="YYYY-MM-DD">
+                                <input type="text" id="set_woy" class="" data-date-format="YYYY-MM-DD" data-value="2015-04-20">
                                 <label for="set_woy">{% trans "Date" %}</label>
                             </div>
                         </div>
@@ -201,7 +201,7 @@
                             </div>
                         </div>
                         <div class="col s12 l9 xl6">
-                            <div id="" class="map-size"></div>
+                            <div id="leaflet_drought_map" class="map-size"></div>
                         </div>
                         <div class="col s12 l12 xl4">
                             <div id="mapInfo"></div>
@@ -211,42 +211,55 @@
             </div>
         </div>
 
-        {% for chart_title, chart_val in panels.charts.items %}
+        {% for panel_title, panel_val in panels.items %}
+            {% if panel_title == '' %}
+            {% endif %}
+        {% endfor %}
+
+        {% for chart_title, chart_val in panels.charts.donut.items %}
             <div class="col s12 m6 xl4">
                 <div class="card card-graph">
                     <div class="card-header red darken-3 white-text z-depth-2">
                         <span class="card-title">{{ chart_val.title }}</span>
-                        <i class="left"></i>
-                        <span class="card-title right">{% readable chart_val.total %}</span>
+                        <!-- <span class="card-title right">{% readable chart_val.total %}</span> -->
                     </div>
                     <div class="card-image">
-                        <div id="{{ chart_title }}" class="ch-size bar-donut-chart" data-color=colorDrought data-val='{{ chart_val.child | jsonify | safe }}'></div>
+                        <div id="drought_{{ chart_title }}_donut" class="ch-size donut-chart" data-color=colorDrought data-val='{{ chart_val.child | jsonify | safe }}'></div>
+                        <div class="center-align grey-text text-darken-2 affected-count">
+                            <span class="red-text text-darken-3">{% readable chart_val.total_atrisk %}</span>
+                            of
+                            <span class="red-text text-darken-3">{% readable chart_val.total %}</span>
+                            at risk
+                        </div>
                     </div>
                 </div>
             </div>
         {% endfor %}
 
-        <div class="col s12 m6 xl4">
-            <div class="card card-graph">
-                <div class="card-header red darken-3 white-text z-depth-2">
-                    <span class="card-title">{{ chart_val.title }}</span>
-                    <i class="left"></i>
-                    <span class="card-title right">{% readable chart_val.total %}</span>
-                </div>
-                <div class="card-image">
-                    <div id="coba" class="ch-size bar-stacked-percent-chart" data-color=colorDrought data-xaxis='["Fruit Trees", "Rainfed", "Rangeland", "Forest & Shrub", "Vineyards", "Build Up", "Irrigated Agricultural Land"]' data-val='[{"name": "Abnormally Dry", "data": [2,20,40,20,50]}, {"name": "Moderate", "data": [10,20,40,20,50]}, {"name": "Severe", "data": [10,20,40,20,50]}]'></div>
+        {% for chart_title, chart_val in panels.charts.bar.items %}
+            <div class="col s12 m6 xl6">
+                <div class="card card-graph">
+                    <div class="card-header red darken-3 white-text z-depth-2">
+                        <span class="card-title">{{ chart_val.title }}</span>
+                        <!-- <i class="left"></i> -->
+                        <!-- <span class="card-title right">{% readable chart_val.total %}</span> -->
+                    </div>
+                    <div class="card-image">
+                        <div id="drought_{{ chart_title }}_bar" class="ch-size bar-stacked-percent-chart" data-color=colorDrought data-xaxis='{{ chart_val.labels | jsonify | safe }}' data-val='{{ chart_val.child | jsonify | safe }}'></div>
+                    </div>
                 </div>
             </div>
-        </div>
+        {% endfor %}
 
+        {% for drought_title, drought_val in panels.tables.items %}
         <div class="col s12">
-            <div class="card">
+            <div class="card table-content">
                 <div class="card-content">
                     <span class="card-title">
-                        {% trans "Fruit Trees" %}
+                        {{ drought_val.title }}
                     </span>
                     <p>
-                        {% trans "..." %}
+                        {{ drought_val.description }}
                     </p>
                     <div class="table-responsive-scroll">
                         <table class="striped highlight online">
@@ -285,12 +298,12 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                {% for parent in panels.adm_likelihood_pop_building_area.parentdata %}
+                                {% for parent in drought_val.parentdata %}
                                     <td class="boldRow">{{parent}}</td>
                                 {% endfor %}
-                                {% for child in panels.adm_likelihood_pop_building_area.child %}
-                                    <tr class="selectable" onclick="window.document.location='?page=avalancherisk&code={{child.code}}';">
-                                        {% for item in child.value %}
+                                {% for child in drought_val.child %}
+                                    <tr class="selectable" onclick="window.document.location='?page=drought&code={{child.code}}';">
+                                        {% for item in child.values %}
                                             <td>{{item}}</td>
                                         {% endfor %}
                                     </tr>
@@ -301,6 +314,77 @@
                 </div>
             </div>
         </div>
+        {% endfor %}
     </div>
     {% endif %}
+{% endblock %}
+
+{% block extra_script %}
+    <script>
+        var centroid = boundary['centroid'];
+        var chosen_label = '{{parent_label}}';
+        var woy = {{ woy }};
+        var level_risk_pie = ['{% trans "Abnormally Dry" %}', '{% trans "Moderate" %}', '{% trans "Severe" %}', '{% trans "Extreme" %}', '{% trans "Exceptional" %}', '{% trans "Not at Risk" %}' ];
+    </script>
+
+    <script type="text/javascript">
+        document.addEventListener('DOMContentLoaded', function() {
+            var date_param = getParameterByName("date");
+
+            if (date_param == null){
+                var start = moment();
+            } else {
+                var start = moment(new Date(date_param.substr(0, 4), parseInt(date_param.substr(5, 2))-1, date_param.substr(8, 2)));
+            }
+
+            console.log(start);
+            // $('#set_woy').datepicker('setDate', '2018-12-09');
+            $('#set_woy').datepicker({
+                // format: 'YYYY-MM-DD',
+                // defaultDate: start,
+                defaultDate: '2018-12-09',
+                setDefaultDate: true,
+                maxDate: new Date(),
+                autoClose: true,
+                onSelect: function(context){
+                    console.log(context);
+                    var url = $(location).attr("href");
+                    var date = moment(start).format('YYYY-MM-DD');
+
+                    console.log(url);
+                    console.log(date);
+                    console.log(date_param);
+
+                    // if (date_param == null){
+                    //     window.document.location = url+'&date='+date;
+                    // } else {
+                    //     url = updateUrlParameter(url, 'date', date);
+                    //     window.document.location = url;
+                    // }
+
+                    console.log(url);
+                }
+            });
+
+            // $('#set_woy').setDate(start);
+
+            // $('input[name="set_woy"]').daterangepicker({
+            //     singleDatePicker: true,
+            //     showDropdowns: true,
+            //     startDate: start,
+            //     minYear: 2017,
+            //     maxDate: new Date()
+            // }, function(start, end, label) {
+            //     var url = $(location).attr("href");
+            //     var date = moment(start).format('YYYY-MM-DD');
+
+            //     if (date_param == null){
+            //         window.document.location = url+'&date='+date;
+            //     } else {
+            //         url = updateUrlParameter(url, 'date', date);
+            //         window.document.location = url;
+            //     }
+            // });
+        });
+    </script>
 {% endblock %}
