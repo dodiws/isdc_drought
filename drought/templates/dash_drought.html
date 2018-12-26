@@ -40,11 +40,13 @@
         </div>
 
         <div class="col s12">
-            <div class="card">
-                <div class="card-content">
+            <div class="card card-dashboard">
+                <div class="card-header red darken-2 white-text">
                     <span class="card-title">
                         {% trans "Map" %}
                     </span>
+                </div>
+                <div class="card-content">
                     <div class="row">
                         <div class="col s12 l3 xl2">
                             <div id="layercontrol">
@@ -253,16 +255,18 @@
 
         {% for drought_title, drought_val in panels.tables.items %}
         <div class="col s12">
-            <div class="card table-content">
-                <div class="card-content">
+            <div class="card card-dashboard table-content">
+                <div class="card-header red darken-2 white-text">
                     <span class="card-title">
                         {{ drought_val.title }}
                     </span>
+                </div>
+                <div class="card-content">
                     <p>
                         {{ drought_val.description }}
                     </p>
                     <div class="table-responsive-scroll">
-                        <table class="striped highlight online">
+                        <table class="highlight online">
                             <thead>
                                 <tr>
                                     <th rowspan="3">{% trans "Region" %}</th>
@@ -276,25 +280,25 @@
                                     <th colspan="3" class="drought_excptnal">{% trans "Exceptional" %}</th>
                                 </tr>
                                 <tr>
-                                    <th class="drought_ab_dry hum" title='{% trans "Population" %}'><i class="fa fa-male"></i></th>
-                                    <th class="drought_ab_dry hum" title='{% trans "Building" %}'><i class="icon-infrastructure_building"></i></th>
-                                    <th class="drought_ab_dry hum" title='{% trans "Area" %}'><i class="icon-socioeconomic_rural"></i></th>
+                                    <th class="drought_ab_dry hum" title='{% trans "Population" %}'><i class="icon-Affected-population"></i></th>
+                                    <th class="drought_ab_dry hum" title='{% trans "Building" %}'><i class="icon-Building"></i></th>
+                                    <th class="drought_ab_dry hum" title='{% trans "Area" %}'><i class="icon-Rural"></i></th>
 
-                                    <th class="drought_mod hum" title='{% trans "Population" %}'><i class="fa fa-male"></i></th>
-                                    <th class="drought_mod hum" title='{% trans "Building" %}'><i class="icon-infrastructure_building"></i></th>
-                                    <th class="drought_mod hum" title='{% trans "Area" %}'><i class="icon-socioeconomic_rural"></i></th>
+                                    <th class="drought_mod hum" title='{% trans "Population" %}'><i class="icon-Affected-population"></i></th>
+                                    <th class="drought_mod hum" title='{% trans "Building" %}'><i class="icon-Building"></i></th>
+                                    <th class="drought_mod hum" title='{% trans "Area" %}'><i class="icon-Rural"></i></th>
 
-                                    <th class="drought_svre hum" title='{% trans "Population" %}'><i class="fa fa-male"></i></th>
-                                    <th class="drought_svre hum" title='{% trans "Building" %}'><i class="icon-infrastructure_building"></i></th>
-                                    <th class="drought_svre hum" title='{% trans "Area" %}'><i class="icon-socioeconomic_rural"></i></th>
+                                    <th class="drought_svre hum" title='{% trans "Population" %}'><i class="icon-Affected-population"></i></th>
+                                    <th class="drought_svre hum" title='{% trans "Building" %}'><i class="icon-Building"></i></th>
+                                    <th class="drought_svre hum" title='{% trans "Area" %}'><i class="icon-Rural"></i></th>
 
-                                    <th class="drought_extrme hum" title='{% trans "Population" %}'><i class="fa fa-male"></i></th>
-                                    <th class="drought_extrme hum" title='{% trans "Building" %}'><i class="icon-infrastructure_building"></i></th>
-                                    <th class="drought_extrme hum" title='{% trans "Area" %}'><i class="icon-socioeconomic_rural"></i></th>
+                                    <th class="drought_extrme hum" title='{% trans "Population" %}'><i class="icon-Affected-population"></i></th>
+                                    <th class="drought_extrme hum" title='{% trans "Building" %}'><i class="icon-Building"></i></th>
+                                    <th class="drought_extrme hum" title='{% trans "Area" %}'><i class="icon-Rural"></i></th>
 
-                                    <th class="drought_excptnal hum" title='{% trans "Population" %}'><i class="fa fa-male"></i></th>
-                                    <th class="drought_excptnal hum" title='{% trans "Building" %}'><i class="icon-infrastructure_building"></i></th>
-                                    <th class="drought_excptnal hum" title='{% trans "Area" %}'><i class="icon-socioeconomic_rural"></i></th>
+                                    <th class="drought_excptnal hum" title='{% trans "Population" %}'><i class="icon-Affected-population"></i></th>
+                                    <th class="drought_excptnal hum" title='{% trans "Building" %}'><i class="icon-Building"></i></th>
+                                    <th class="drought_excptnal hum" title='{% trans "Area" %}'><i class="icon-Rural"></i></th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -303,7 +307,7 @@
                                 {% endfor %}
                                 {% for child in drought_val.child %}
                                     <tr class="selectable" onclick="window.document.location='?page=drought&code={{child.code}}';">
-                                        {% for item in child.values %}
+                                        {% for item in child.value %}
                                             <td>{{item}}</td>
                                         {% endfor %}
                                     </tr>
