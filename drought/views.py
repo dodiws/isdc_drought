@@ -33,6 +33,7 @@ from geodb.models import (
 	# villagesummaryEQ,
 	)
 from geodb.geo_calc import (
+	getBaseline,
 	getCommonUse,
 	# getFloodForecastBySource,
 	# getFloodForecastMatrix,
@@ -100,17 +101,24 @@ def getDroughtRisk(request, filterLock, flag, code, woy, includes=[], excludes=[
 	targetBase = AfgLndcrva.objects.all()
 	response = getCommonUse(request, flag, code)
 
-	if flag not in ['entireAfg','currentProvince']:
-		response['Population']=getTotalPop(filterLock, flag, code, targetBase)
-		response['Area']=getTotalArea(filterLock, flag, code, targetBase)
-		response['Buildings']=getTotalBuildings(filterLock, flag, code, targetBase)
-		response['settlement']=getTotalSettlement(filterLock, flag, code, targetBase)
-	else :
-		tempData = getShortCutData(flag,code)
-		response['Population']= tempData['Population']
-		response['Area']= tempData['Area']
-		response['Buildings']= tempData['total_buildings']
-		response['settlement']= tempData['settlements']
+	response['baseline'] = baseline = getBaseline(request, filterLock, flag, code, includes=['pop_lc','area_lc','building_lc'])
+
+	# if flag not in ['entireAfg','currentProvince']:
+	# 	response['Population']=getTotalPop(filterLock, flag, code, targetBase)
+	# 	response['Area']=getTotalArea(filterLock, flag, code, targetBase)
+	# 	response['Buildings']=getTotalBuildings(filterLock, flag, code, targetBase)
+	# 	response['settlement']=getTotalSettlement(filterLock, flag, code, targetBase)
+	# else :
+	# 	tempData = getShortCutData(flag,code)
+	# 	response['Population']= tempData['Population']
+	# 	response['Area']= tempData['Area']
+	# 	response['Buildings']= tempData['total_buildings']
+	# 	response['settlement']= tempData['settlements']
+
+	response['Population'] = baseline['pop_total']
+	response['Area'] = baseline['area_total']
+	response['Buildings'] = baseline['building_total']
+	response['settlement'] = baseline['settlement_total']
 
 	sql_tpl = '''
 		SELECT
@@ -170,15 +178,15 @@ def getDroughtRisk(request, filterLock, flag, code, woy, includes=[], excludes=[
 		sql_param['adm_code'] = '0 as area_code'
 		sql_param['adm_name'] = '\'drawarea\' as area_name'
 		sql_param['extra_condition'] = 'AND ST_Intersects(wkb_geometry, %s)' % filterLock
-		# sql_param['pop_function'] = 'case \
-		#     when ST_CoveredBy(afg_lndcrva.wkb_geometry ,'+filterLock+') then area_population \
-		#     else ST_Area(ST_Intersection(afg_lndcrva.wkb_geometry,'+filterLock+')) / ST_Area(afg_lndcrva.wkb_geometry)* area_population end'
-		# sql_param['building_function'] = 'case \
-		#     when ST_CoveredBy(afg_lndcrva.wkb_geometry ,'+filterLock+') then area_buildings \
-		#     else ST_Area(ST_Intersection(afg_lndcrva.wkb_geometry,'+filterLock+')) / ST_Area(afg_lndcrva.wkb_geometry)* area_buildings end'
-		# sql_param['area_function'] = 'case \
-		#     when ST_CoveredBy(afg_lndcrva.wkb_geometry ,'+filterLock+') then area_sqm \
-		#     else ST_Area(ST_Intersection(afg_lndcrva.wkb_geometry,'+filterLock+')) / ST_Area(afg_lndcrva.wkb_geometry)* area_sqm end'
+		sql_param['pop_function'] = 'case \
+		    when ST_CoveredBy(afg_lndcrva.wkb_geometry ,'+filterLock+') then area_population \
+		    else ST_Area(ST_Intersection(afg_lndcrva.wkb_geometry,'+filterLock+')) / ST_Area(afg_lndcrva.wkb_geometry)* area_population end'
+		sql_param['building_function'] = 'case \
+		    when ST_CoveredBy(afg_lndcrva.wkb_geometry ,'+filterLock+') then area_buildings \
+		    else ST_Area(ST_Intersection(afg_lndcrva.wkb_geometry,'+filterLock+')) / ST_Area(afg_lndcrva.wkb_geometry)* area_buildings end'
+		sql_param['area_function'] = 'case \
+		    when ST_CoveredBy(afg_lndcrva.wkb_geometry ,'+filterLock+') then area_sqm \
+		    else ST_Area(ST_Intersection(afg_lndcrva.wkb_geometry,'+filterLock+')) / ST_Area(afg_lndcrva.wkb_geometry)* area_sqm end'
 
 	sql = sql_tpl.format(**sql_param)
 	sql_total = sql_total_tpl.format(**sql_param)
@@ -577,14 +585,14 @@ def dashboard_drought(request, filterLock, flag, code, date=None, includes=[], e
 
 	panels.path('charts')['donut'] = donutcharts = {k:{
 		'key':k,
-		'child':[[r['label'],r['child'][k]] for kr,r in source['drought_data']['group_by']['risk'].items()]
+		'child':[[r['label'],float(r['child'][k])] for kr,r in source['drought_data']['group_by']['risk'].items()]
 	} for k in ['pop','area','building']}
 	donutcharts['pop']['title'] = _('Drought Population')
 	donutcharts['area']['title'] = _('Drought Area')
 	donutcharts['building']['title'] = _('Drought Building')
-	donutcharts['pop']['child'] += [[_('Not at Risk'), Decimal(source['Population'])-sum([r[1] for r in donutcharts['pop']['child']])]]
-	donutcharts['area']['child'] += [[_('Not at Risk'), Decimal(source['Area'])-sum([r[1] for r in donutcharts['area']['child']])]]
-	donutcharts['building']['child'] += [[_('Not at Risk'), Decimal(source['Buildings'])-sum([r[1] for r in donutcharts['building']['child']])]]
+	donutcharts['pop']['child'] += [[_('Not at Risk'), source['Population']-float(sum([r[1] for r in donutcharts['pop']['child']]))]]
+	donutcharts['area']['child'] += [[_('Not at Risk'), source['Area']-float(sum([r[1] for r in donutcharts['area']['child']]))]]
+	donutcharts['building']['child'] += [[_('Not at Risk'), source['Buildings']-float(sum([r[1] for r in donutcharts['building']['child']]))]]
 
 	lcrisk = dict_ext(source['drought_data']['group_by']['landcover_risk'])
 	panels.path('charts')['bar'] = barcharts = dict_ext()
@@ -593,11 +601,11 @@ def dashboard_drought(request, filterLock, flag, code, date=None, includes=[], e
 		barcharts.path(k)['labels'] = [lc for lc in lcrisk]
 		barcharts.path(k)['child'] = [{
 			'name':_(DROUGHTRISK_TYPES[r]),
-			'data':[lcrisk.pathget(lc,'risk_child',r,'child',k) or 0 for lc in barcharts.path(k)['labels']],
+			'data':[float(lcrisk.pathget(lc,'risk_child',r,'child',k) or 0) for lc in barcharts.path(k)['labels']],
 		} for r in DROUGHTRISK_TYPES_ORDER]
 		barcharts.path(k)['child'].append({
 			'name':_("Not at Risk"),
-			'data':[lcrisk[lc]['total_child'][k]-lcrisk[lc]['total_risk_child'][k] for lc in barcharts.path(k)['labels']],
+			'data':[float(lcrisk[lc]['total_child'][k]-lcrisk[lc]['total_risk_child'][k]) for lc in barcharts.path(k)['labels']],
 		})
 	barcharts['pop']['title'] = _('Drought Population Landcover')
 	barcharts['area']['title'] = _('Drought Area Landcover')
@@ -606,16 +614,20 @@ def dashboard_drought(request, filterLock, flag, code, date=None, includes=[], e
 	custom_slugify = Slugify(separator='_', to_lower=True)
 	for klc in DROUGHTLANDCOVER_TYPES_ORDER:
 		key = klc
+		lc = DROUGHTLANDCOVER_TYPES[klc]
 		table = tables.path(key)
-		table['title'] = lc = _(DROUGHTLANDCOVER_TYPES[klc])
+		table['title'] = _(lc)
 		table['key'] = key
-		table['parentdata'] = [response['parent_label']] + [sub for kr,r in source['drought_data']['group_by']['risk'].items() for ksub,sub in r['child'].items()]
-		table['parentdata'] += [0]*(colcount-len(table['parentdata']))
+		table['parentdata'] = [response['parent_label']]
+		for r in DROUGHTRISK_TYPES_ORDER:
+			cat = dict_ext(source.pathget('drought_data','group_by','landcover_risk',lc,'risk_child',r,'child'))
+			table['parentdata'] += [int(cat.pathget('pop') or 0)] + [int(cat.pathget('building') or 0)] + [float(cat.pathget('area') or 0)]
+		# table['parentdata'] += [0]*(colcount-len(table['parentdata']))
 		table['child'] = []
 		for kadm, adm in source.pathget('drought_data','group_by','landcover_area_risk','lc_child',lc,'adm_child').items():
 			row = [adm['label'],]
 			for kr, r in adm['risk_child'].items():
-				row += [r['child']['pop']] + [r['child']['building']] + [r['child']['area']]
+				row += [int(r['child']['pop'])] + [int(r['child']['building'])] + [float(r['child']['area'])]
 			row += [0]*(colcount-len(row))
 			table['child'].append({
 				'code':adm['code'],
